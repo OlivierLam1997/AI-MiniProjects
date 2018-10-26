@@ -12,43 +12,38 @@ class game:
 
 
 ## load_board done for the state representation. Don't touch without consultation
-    def load_board(self,stream):
-        str = open(stream, 'r').read().replace('\n', '')
-        row_str = str[0]
-        column_str = str[0]
-        state = []
-        state.append(int(str[2]))
-        row=int(row_str)
-        column=int(column_str)
-        index=4
-        for i in range(row):
-            for j in range(column):
-                state.append(int(str[index]))
-                index+=1
-        return state
+def load_board(self, stream):
+    str = open(stream, 'r').read().replace('\n', '')
+    row_str = str[0]
+    column_str = str[0]
+    state = []
+    state.append(int(str[2]))
+    row = int(row_str)
+    column = int(column_str)
+    index = 4
+    for i in range(row):
+        for j in range(column):
+            state.append(int(str[index]))
+            index += 1
+    return state
 
 
 ## to_move done for the state representation. Don't touch without consultation
-    def to_move(self,state):
-        player = state[0]
-        if player==1:
-            print('Next player to move is the black')
-            return 1
-        if player==2:
-            print('Next player to move is the white')
-            return 2
+def to_move(self, state):
+    player = state[0]
+    if player == 1:
+        print('Next player to move is the black')
+        return 1
+    if player == 2:
+        print('Next player to move is the white')
+        return 2
 
 
 ##To do:
-    def terminal_test(self, state):
+def terminal_test(self, state):
 
+def utility(self, state, player):
 
-    def utility(self, state, player):
+def actions(self, state):
 
-
-    def actions(self, state):
-
-
-    def result(self, state, move_a):
-
-
+def result(self, state, move_a):
