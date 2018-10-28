@@ -53,6 +53,7 @@ def to_move(self, state : Game.State):
 
 ##To do:
 def terminal_test(self, state):
+    return len(state.moves) == 0
 
 def utility(self, state, player):
 
@@ -64,12 +65,13 @@ def result(self, state: Game.State, move_a):
         return state
     state.player = to_move(state.player)
     state.board[move_a[1] - 1][move_a[2] - 1] = move_a[0]
+    return None
 
-
+##
 def isCaptured(sefl, state: Game.State, posX, posY):
-    liberties = isCapturedAux(state, posX, posY, None, None, None)
-    return len(liberties) == 0
+    return len(isCapturedAux(state, posX, posY, None, None, None)) == 0
 
+##
 def isCapturedAux(self, state: Game.State, posX, posY, previousPosX, previousPosY, liberties):
     stone = state.board[posX - 1][posY - 1]
     for n in findNeighbours(state, posX, posY):
@@ -79,17 +81,8 @@ def isCapturedAux(self, state: Game.State, posX, posY, previousPosX, previousPos
     liberties.extend(getLiberties(state, posX, posY))
     return liberties
 
-# recursive idea
-# for every neighbours
-#   if one of the them is blank -> return false
-#   if one of them is the same color but we already have visited, ignore the stone
-#   if all of them is of the opposite player -> return yes
-#   if one of the neighbour is the same color, check that we did not visit the stone yet and
-#       apply the same algorithm for this next stone
 
-# -> problem if a stone has 2 opposite neighbours and 2 neighbours of
-#    the same color but the first one is surrounded but opposite stones
-
+## returns list of all liberties of one stone, with position X and Y (1 to N)
 def getLiberties(self, state: Game.State, posX, posY):
     liberties = list()
 
@@ -100,24 +93,25 @@ def getLiberties(self, state: Game.State, posX, posY):
 
     return liberties
 
+## returns the coordinates(on the board -> 0 to N - 1)of all adjacent stones
 def findNeighbours(sefl, state: Game.State, posX, posY):
     if posX == 1:
         if posY == 1:
-            return [state.board[0][1], state.board[1][0]]
+            return[(0, 1), (1, 0)]
         elif posY == state.N:
-            return [(state.board[0][state.N - 2], 0, state.N - 2), state.board[1][state.N - 1]]
+            return [(0, state.N - 2), (1, state.N - 1)]
         else:
-            return [state.board[0][posY - 2], state.board[1][posY - 1], state.board[0][posY]]
+            return [(0, posY - 2),(1, posY - 1),(0, posY)]
     elif posX == state.N:
         if posY == 1:
-            return [state.board[state.N - 1][1], state.board[state.N - 2][0]]
+            return [(state.N - 1, 1), (state.N - 2, 0)]
         elif posY == state.N:
-            return [state.board[state.N - 1][state.N - 2], state.board[state.N - 2][state.N - 1]]
+            return [(state.N - 1, state.N - 2), (state.N - 2, state.N - 1)]
         else:
-            return [state.board[state.N - 1][posY - 2], state.board[state.N - 2][posY - 1], state.board[state.N - 1][posY]]
+            return [(state.N - 1, posY - 2), (state.N - 2, posY - 1), (state.N - 1, posY)]
     elif posY == 1:
-        return
+        return [(posX - 2, 1), (posX - 1, 2), (posX, 1)]
     elif posY == state.N:
-        return
+        return [(posX - 2, state.N - 1), (posX - 1, state.N - 2), (posX, state.N - 1)]
     else:
-        return [state.board[posX - 1][posY - 2], state.board[posX - 1][posY], state.board[posX - 2][posY - 1], state.board[posX][posY - 1]]
+        return [(posX - 1, posY - 2), (posX - 1, posY), (posX - 2, posY - 1), (posX, posY - 1)]
