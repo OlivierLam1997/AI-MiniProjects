@@ -65,14 +65,19 @@ def result(self, state: Game.State, move_a):
     state.player = to_move(state.player)
     state.board[move_a[1] - 1][move_a[2] - 1] = move_a[0]
 
+
 def isCaptured(sefl, state: Game.State, posX, posY):
-    stone = state.player
-    stoneOpponent = to_move(stone)
+    liberties = isCapturedAux(state, posX, posY, None, None, None)
+    return len(liberties) == 0
 
-    return isCapturedAux(state, posX, posY, )
-
-def isCapturedAux(self, state: Game.State, posX, posY):
-
+def isCapturedAux(self, state: Game.State, posX, posY, previousPosX, previousPosY, liberties):
+    stone = state.board[posX - 1][posY - 1]
+    for n in findNeighbours(state, posX, posY):
+        stoneNeighbour = state.board[n[0]][n[1]]
+        if (posX != previousPosX) & (posY != previousPosY) & (stoneNeighbour == stone):
+            isCapturedAux(state, n[0], n[1], posX, posY, liberties)
+    liberties.extend(getLiberties(state, posX, posY))
+    return liberties
 
 # recursive idea
 # for every neighbours
@@ -85,13 +90,22 @@ def isCapturedAux(self, state: Game.State, posX, posY):
 # -> problem if a stone has 2 opposite neighbours and 2 neighbours of
 #    the same color but the first one is surrounded but opposite stones
 
+def getLiberties(self, state: Game.State, posX, posY):
+    liberties = list()
+
+    for s in findNeighbours(state, posX, posY):
+        stone = state.board[s[0]][s[1]]
+        if stone == 0:
+            liberties.append(stone)
+
+    return liberties
 
 def findNeighbours(sefl, state: Game.State, posX, posY):
     if posX == 1:
         if posY == 1:
             return [state.board[0][1], state.board[1][0]]
         elif posY == state.N:
-            return [state.board[0][state.N - 2], state.board[1][state.N - 1]]
+            return [(state.board[0][state.N - 2], 0, state.N - 2), state.board[1][state.N - 1]]
         else:
             return [state.board[0][posY - 2], state.board[1][posY - 1], state.board[0][posY]]
     elif posX == state.N:
