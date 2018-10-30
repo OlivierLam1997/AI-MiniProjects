@@ -69,7 +69,15 @@ def result(self, state: Game.State, move_a):
 
 ##
 def isCaptured(sefl, state: Game.State, posX, posY):
-    return len(isCapturedAux(state, posX, posY, None, None, None)) == 0
+    neighbourIsCaptured = None
+
+    ## check if neighbours are captured first and make sure that the next neighbour doesn't check the "capture" of this stone
+    for n in findNeighbours(state, posX, posY):
+        neighbourIsCaptured = neighbourIsCaptured or isCapturedAux(state, n[0] + 1, n[1] + 1, posX, posY, None)
+
+    #a stone is captured only if no neighbours is captured
+    return isCapturedAux(state, posX, posY, None, None, None) and (not neighbourIsCaptured)
+
 
 ##
 def isCapturedAux(self, state: Game.State, posX, posY, previousPosX, previousPosY, liberties):
@@ -79,7 +87,7 @@ def isCapturedAux(self, state: Game.State, posX, posY, previousPosX, previousPos
         if (posX != previousPosX) & (posY != previousPosY) & (stoneNeighbour == stone):
             isCapturedAux(state, n[0], n[1], posX, posY, liberties)
     liberties.extend(getLiberties(state, posX, posY))
-    return liberties
+    return len(liberties) == 0
 
 
 ## returns list of all liberties of one stone, with position X and Y (1 to N)
