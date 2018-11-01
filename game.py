@@ -55,17 +55,16 @@ def to_move(self, state : Game.State):
 def terminal_test(self, state):
     return len(state.moves) == 0
 
-def utility(self, state, player):
+#def utility(self, state, player):
 
-def actions(self, state : Game.State):
-    state.moves=[]
+def actions(self, state: Game.State):
+    state.moves = []
     for i in range(state.N):
         for j in range(state.N):
             stone = state.board[i - 1][j - 1]
-            if stone==0 and isCaptured(state,i,j)==False:
+            if stone == 0 and isCaptured(state,i,j) == False:
                 state.moves.append((state.player,i,j))
     return state.moves
-
 
 
 def result(self, state: Game.State, move_a):
