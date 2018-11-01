@@ -57,7 +57,16 @@ def terminal_test(self, state):
 
 def utility(self, state, player):
 
-def actions(self, state):
+def actions(self, state : Game.State):
+    state.moves=[]
+    for i in range(state.N):
+        for j in range(state.N):
+            stone = state.board[i - 1][j - 1]
+            if stone==0 and isCaptured(state,i,j)==False:
+                state.moves.append((state.player,i,j))
+    return state.moves
+
+
 
 def result(self, state: Game.State, move_a):
     ##Illegal moves ha
