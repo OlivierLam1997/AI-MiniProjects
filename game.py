@@ -21,7 +21,7 @@ class Game:
             self.moves = moves
             self.board = board
 
-    # load_board done for the state representation. Don't touch without consultation.
+    #
     def load_board(self, fileName):
         stream = open(fileName, 'r').read().replace('\n', '')
         n = int(stream[0])
@@ -39,7 +39,7 @@ class Game:
 
         return Game.State(player, n, None, board)
 
-    # to_move done for the state representation. Don't touch without consultation
+    #
     def to_move(self, state: State):
         player = state.player
         if player == 1:
@@ -57,7 +57,8 @@ class Game:
                 stoneCaptured = stoneCaptured or self.isCaptured(state, i + 1, j + 1)
         return (len(state.moves) == 0) or stoneCaptured
 
-    def utility(self, state, player):
+
+    def utility(self, state: State, player):
         if self.terminal_test(state):
             if self.isDraw(self, state):
                 return 0
@@ -66,8 +67,34 @@ class Game:
             else:
                 return 1
         else:
-            
+            self.eval_fn(self, state, player)
 
+    #compute all the liberties of the groups of opponent stones: list called OppLiberties
+    #compute all the liberties of our group of stones: list called UsLiberties
+
+    def eval_fn(self, state: State, player):
+        self.getGroupLiberties(self, state)
+        if (min(UsLiberties) > min(OppLiberties)):
+            return 1 / (min(OppLiberties))
+        elif (min(UsLiberties) < min(OppLiberties)):
+            return - 1 / (min(OppLiberties))
+        else:
+            if state.player == player:
+                return 0.0001
+            else:
+                return -0.0001
+
+    def getGroupLiberties(self, state: State):
+        UsLiberties = []
+        OppLiberties = []
+
+    def getGroups(self, state: State, listOfGroups):
+        stoneDiscovered = []
+        stone = state.player
+
+        for i in range(state.N):
+            for j in range (state.N):
+                
 
     def isDraw(self, state: State):
         player2 = self.to_move(state)
@@ -139,7 +166,7 @@ class Game:
         return liberties
 
     # returns the coordinates(on the board -> 0 to N - 1)of all adjacent stones
-    def findNeighbours(sefl, state: State, posX, posY):
+    def findNeighbours(self, state: State, posX, posY):
         if posX == 1:
             if posY == 1:
                 return[(0, 1), (1, 0)]
@@ -173,9 +200,9 @@ print(state.board)
 
 neighbours = game.findNeighbours(game, state, 3, 2)
 lib = game.getLiberties(game, state, 3, 4)
-cap = game.isCaptured(game, state, 3, 2)
+cap = game.isCapturedAux(game, state, 3, 2)
 
 
-# print(neighbours)
-# print(lib)
+print(neighbours)
+print(lib)
 print(cap)
