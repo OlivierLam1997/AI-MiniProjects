@@ -2,18 +2,7 @@ from copy import deepcopy
 
 class Game:
 
-## Steps:
-##  1. Load_board: load a game board and show the state
-##  2. To_move: Who is the next to move?
-##  3. Terminal_test: Is the state terminal?
-##  4. Utility:
-##      if yes then returns 1 if player wins, -1 is loses, 0 in case of draw
-##      if not then evaluates the state (the possibilities) of the player
-##  5. Action: determinate possible actions to do at a state
-##  6. Result: returns the successor state after playing the action
-
-
-# Define new object, State
+    # Define new object, State
     class State:
         def __init__(self, player, N, moves, board):
             self.player = player
@@ -73,7 +62,13 @@ class Game:
     #compute all the liberties of our group of stones: list called UsLiberties
 
     def eval_fn(self, state: State, player):
-        self.getGroupLiberties(self, state)
+        player2 = self.to_move(state)
+        state2 = deepcopy(state)
+        state2.player = player2
+
+        UsLiberties = self.getGroupLiberties(self, state)
+        OppLiberties = self.getGroupLiberties(self, state2)
+
         if (min(UsLiberties) > min(OppLiberties)):
             return 1 / (min(OppLiberties))
         elif (min(UsLiberties) < min(OppLiberties)):
@@ -84,17 +79,32 @@ class Game:
             else:
                 return -0.0001
 
-    def getGroupLiberties(self, state: State):
-        UsLiberties = []
-        OppLiberties = []
+    def groupLiberties(self, state: State):
+        nbLibPerGroup = []
+        for group in self.getGroups(self, state):
+            groupLib = []
+            for s in group:
+                groupLib.extend(self.getLiberties(self, state, s[0] + 1, s[1] + 1))
+            nbLibPerGroup.append(len(set(groupLib)))
+        return nbLibPerGroup
 
-    def getGroups(self, state: State, listOfGroups):
+    def getGroups(self, state: State):
         stoneDiscovered = []
-        stone = state.player
+        listOfGroups = []
 
         for i in range(state.N):
             for j in range (state.N):
-                
+                if not (i, j) in stoneDiscovered:
+                    newGroup = self.getGroupsAux(self, state, i, j, None, None, [])
+                    stoneDiscovered.extend(newGroup)
+                    listOfGroups.append([newGroup])
+        return listOfGroups
+
+    def getGroupsAux(self, state: State, coordX, coordY, prevCoordX, prevCoordY, group):
+        for n in self.findNeighbours(self, state, coordX + 1, coordY + 1):
+            if (n[0] != prevCoordX) and (n[1] != prevCoordY) and state.board[n[1]][n[0]] == state.player:
+                self.getGroupsAux(self, state, n[0], n[1], coordX, coordY, group)
+        return group.append((coordX, coordY))
 
     def isDraw(self, state: State):
         player2 = self.to_move(state)
