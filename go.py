@@ -119,7 +119,7 @@ class Game:
                     state2 = deepcopy(state)
                     state2.board[i][j] = state2.player
                     if not self.isCaptured(self, state2, j + 1, i + 1):
-                        state.moves.append((state.player, j + 1, i + 1))
+                        state.moves.append((state.player, i + 1, j + 1))
         return state.moves
 
     def result(self, state: State, move_a):
@@ -194,7 +194,7 @@ class Game:
 
 
 game = Game
-state = game.load_board(game, "/Users/olivier/PycharmProjects/AI-MiniProjects/go.txt")
+state = game.load_board(game, "go.txt")
 state.moves = game.actions(game, state)
 
 
