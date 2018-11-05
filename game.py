@@ -2,18 +2,7 @@ from copy import deepcopy
 
 class Game:
 
-## Steps:
-##  1. Load_board: load a game board and show the state
-##  2. To_move: Who is the next to move?
-##  3. Terminal_test: Is the state terminal?
-##  4. Utility:
-##      if yes then returns 1 if player wins, -1 is loses, 0 in case of draw
-##      if not then evaluates the state (the possibilities) of the player
-##  5. Action: determinate possible actions to do at a state
-##  6. Result: returns the successor state after playing the action
-
-
-# Define new object, State
+    # Define new object, State
     class State:
         def __init__(self, player, N, moves, board):
             self.player = player
@@ -26,7 +15,7 @@ class Game:
         stream = open(fileName, 'r').read().replace('\n', '')
         n = int(stream[0])
 
-        assert n > 3, "rang of the board sould be at least 4 to play"  # ask teacher
+        assert n >= 3, "rang of the board sould be at least 4 to play"  # ask teacher
         player = int(stream[2])
         board = [None] * n
 
@@ -44,22 +33,24 @@ class Game:
         player = state.player
         if player == 1:
             print('Next player to move is the black')
-            return 1
+            return 2
         if player == 2:
             print('Next player to move is the white')
-            return 2
+            return 1
 
     #
     def terminal_test(self, state: State):
         stoneCaptured = None
         for i in range(state.N - 1):
             for j in range(state.N - 1):
-                stoneCaptured = stoneCaptured or self.isCaptured(state, i + 1, j + 1)
+                if state.board[j][i] != 0:
+                    stoneCaptured = stoneCaptured or self.isCaptured(self, state, i + 1, j + 1)
+                    print(stoneCaptured)
+
         return (len(state.moves) == 0) or stoneCaptured
 
-
     def utility(self, state: State, player):
-        if self.terminal_test(state):
+        if self.terminal_test(self, state):
             if self.isDraw(self, state):
                 return 0
             elif state.player == player:
@@ -67,44 +58,70 @@ class Game:
             else:
                 return 1
         else:
-            self.eval_fn(self, state, player)
+            state2 = deepcopy(state)
+            state2.player = self.to_move(self, state)
 
-    #compute all the liberties of the groups of opponent stones: list called OppLiberties
-    #compute all the liberties of our group of stones: list called UsLiberties
+            print(self.getGroupLiberties(self, state))
+            print(self.getGroupLiberties(self, state2))
 
-    def eval_fn(self, state: State, player):
-        self.getGroupLiberties(self, state)
-        if (min(UsLiberties) > min(OppLiberties)):
-            return 1 / (min(OppLiberties))
-        elif (min(UsLiberties) < min(OppLiberties)):
-            return - 1 / (min(OppLiberties))
-        else:
-            if state.player == player:
-                return 0.0001
+            minUsLiberties = min(self.getGroupLiberties(self, state))
+            minOppLiberties = min(self.getGroupLiberties(self, state2))
+
+            ratio = 1 / minOppLiberties
+
+            if minUsLiberties > minOppLiberties:
+                return ratio
+            elif minUsLiberties < minOppLiberties:
+                return -ratio
             else:
-                return -0.0001
+                if state.player == player:
+                    return 0.0001
+                else:
+                    return -0.0001
 
     def getGroupLiberties(self, state: State):
-        UsLiberties = []
-        OppLiberties = []
+        nbLibPerGroup = []
+        for group in self.getGroups(self, state):
+            groupLib = set()
+            for s in group:
+                groupLib.update(self.getLiberties(self, state, s[0] + 1, s[1] + 1))
+            nbLibPerGroup.append(len(set(groupLib)))
+        return nbLibPerGroup
 
-    def getGroups(self, state: State, listOfGroups):
-        stoneDiscovered = []
-        stone = state.player
+    def getGroups(self, state: State):
+        stoneDiscovered = set()
+        listOfGroups = []
 
         for i in range(state.N):
             for j in range (state.N):
-                
+
+                if (j, i) not in stoneDiscovered and state.board[i][j] == state.player:
+                    newGroup = self.getGroupsAux(self, state, j, i, set(), {(j, i)})
+                    stoneDiscovered.update(newGroup)
+                    listOfGroups.append(list(newGroup))
+        return listOfGroups
+
+    def getGroupsAux(self, state: State, coordX, coordY, traversed, group):
+        for n in self.findNeighbours(self, state, coordX + 1, coordY + 1):
+            if (n[0], n[1]) not in group and state.board[n[1]][n[0]] == state.player:
+                stone = state.board[n[1]][n[0]]
+                group.add((n[0], n[1]))
+                traversed.add((coordX, coordY))
+
+        return group.union(*[self.getGroupsAux(self, state, n0, n1, traversed, group)
+            for (n0, n1) in
+            filter(lambda nbr : state.board[nbr[1]][nbr[0]] == state.player and (nbr[0], nbr[1]) not in traversed,
+                   self.findNeighbours(self, state, coordX + 1, coordY + 1))])
 
     def isDraw(self, state: State):
-        player2 = self.to_move(state)
+        player2 = self.to_move(self, state)
         state2 = deepcopy(state)
         state2.player = player2
 
         movesPlayer1 = self.actions(self, state)
         movesPlayer2 = self.actions(self, state2)
 
-        return len(movesPlayer1.extend(movesPlayer2)) == 0
+        return len(set().union(movesPlayer1, movesPlayer2)) == 0
 
     def actions(self, state: State):
         state.moves = []
@@ -114,7 +131,7 @@ class Game:
                 if stone == 0:
                     state2 = deepcopy(state)
                     state2.board[i][j] = state2.player
-                    if not self.isCaptured(self, state2, i + 1, j + 1):
+                    if not self.isCaptured(self, state2, j + 1, i + 1):
                         state.moves.append((state.player, i + 1, j + 1))
         return state.moves
 
@@ -123,10 +140,9 @@ class Game:
         if move_a not in state.moves:
             return state
         state.player = self.to_move(state.player)
-        state.board[move_a[1] - 1][move_a[2] - 1] = move_a[0]
+        state.board[move_a[2] - 1][move_a[1] - 1] = move_a[0]
         return state
 
-    # Method that defines if a stone would be captured at position (posX, posY)
     def isCaptured(self, state: State, posX, posY):
         neighbourIsCaptured = None
 
@@ -135,33 +151,34 @@ class Game:
         for n in self.findNeighbours(self, state, posX, posY):
             if (state.board[posY - 1][posX - 1] != state.board[n[1]][n[0]]):
                 neighbourIsCaptured = neighbourIsCaptured or \
-                                        self.isCapturedAux(self, state, n[0] + 1, n[1] + 1, posX, posY, [])
-
+                                        len(self.isCapturedAux(self, state, n[0] + 1, n[1] + 1, set(),
+                                                           self.getLiberties(self, state, n[0] + 1, n[1] + 1))) == 0
         # a stone is captured only if no neighbours is captured
-        print(neighbourIsCaptured)
-        return self.isCapturedAux(self, state, posX, posY, None, None, []) and (not neighbourIsCaptured)
+        return len(self.isCapturedAux(self, state, posX, posY, set(), self.getLiberties(self, state, posX, posY))) == 0 \
+               and (not neighbourIsCaptured)
 
-    #
-    def isCapturedAux(self, state: State, posX, posY, previousPosX, previousPosY, liberties):
+    def isCapturedAux(self, state: State, posX, posY, traversed, liberties):
+
         stone = state.board[posY - 1][posX - 1]
         for n in self.findNeighbours(self, state, posX, posY):
-            print(n)
             stoneNeighbour = state.board[n[1]][n[0]]
-            # print(stoneNeighbour)
-            if (posX != previousPosX) & (posY != previousPosY) & (stoneNeighbour == stone):
-                self.isCapturedAux(self, state, n[0] + 1, n[1] + 1, posX, posY, liberties)
-        liberties.extend(self.getLiberties(self, state, posX, posY))
-        print(liberties)
-        return len(liberties) == 0
+            if (n[0] + 1, n[1] + 1) not in traversed and (stoneNeighbour == stone):
+                liberties = liberties.union(self.getLiberties(self, state, n[0] + 1, n[1] + 1))
+                traversed.add((posX, posY))
+
+        return liberties.union(*[self.isCapturedAux(self, state, n0 +1, n1 +1, traversed, liberties)
+                for (n0, n1) in
+          filter(lambda nbr : state.board[nbr[1]][nbr[0]] == stone and (nbr[0] + 1, nbr[1] + 1) not in traversed,
+                 self.findNeighbours(self, state, posX, posY))])
 
     # returns list of all liberties of one stone, with position X and Y (1 to N)
     def getLiberties(self, state: State, posX, posY):
-        liberties = []
+        liberties = set()
 
         for s in self.findNeighbours(self, state, posX, posY):
             stone = state.board[s[1]][s[0]]
             if stone == 0:
-                liberties.append((stone, s[0], s[1]))
+                liberties.add((s[0], s[1]))
 
         return liberties
 
@@ -182,27 +199,18 @@ class Game:
             else:
                 return [(state.N - 1, posY - 2), (state.N - 2, posY - 1), (state.N - 1, posY)]
         elif posY == 1:
-            return [(posX - 2, 1), (posX - 1, 2), (posX, 1)]
+            return [(posX - 2, 0), (posX - 1, 1), (posX, 0)]
         elif posY == state.N:
             return [(posX - 2, state.N - 1), (posX - 1, state.N - 2), (posX, state.N - 1)]
         else:
             return [(posX - 1, posY - 2), (posX - 1, posY), (posX - 2, posY - 1), (posX, posY - 1)]
 
 
-
-
-
 game = Game
-state = game.load_board(game, "/Users/olivier/PycharmProjects/AI-MiniProjects/go.txt")
-print(state.N)
+state = game.load_board(game, "go.txt")
+state.moves = game.actions(game, state)
 
-print(state.board)
-
-neighbours = game.findNeighbours(game, state, 3, 2)
-lib = game.getLiberties(game, state, 3, 4)
-cap = game.isCapturedAux(game, state, 3, 2)
-
-
-print(neighbours)
-print(lib)
-print(cap)
+print('a')
+print(game.actions(game, state))
+print('b')
+print(game.utility(game, state, 1))
