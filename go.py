@@ -11,8 +11,8 @@ class Game:
             self.board = board
 
     #
-    def load_board(self, file):
-        stream = file.read().replace('\n', '')
+    def load_board(self, fileName):
+        stream = open(fileName, 'r').read().replace('\n', '')
         n = int(stream[0])
 
         assert n >= 3 # to be sure that the board is big enough
@@ -27,7 +27,7 @@ class Game:
                 index += 1
 
         state = Game.State(player, n, None, board)
-        state.moves = self.actions( state)
+        state.moves = self.actions(self, state)
         return state
 
     #
@@ -43,10 +43,10 @@ class Game:
     #
     def terminal_test(self, state: State):
         stoneCaptured = None
-        for i in range(state.N - 1):
-            for j in range(state.N - 1):
+        for i in range(state.N ):
+            for j in range(state.N ):
                 if state.board[j][i] != 0:
-                    stoneCaptured = stoneCaptured or self.isCaptured(state, i + 1, j + 1)
+                    stoneCaptured = stoneCaptured or self.isCaptured(self, state, i + 1, j + 1)
 
         return (len(state.moves) == 0) or stoneCaptured
 
@@ -60,10 +60,10 @@ class Game:
                 return 1
         else:
             state2 = deepcopy(state)
-            state2.player = self.change_Player( state)
+            state2.player = self.change_Player(self, state)
 
-            minUsLiberties = min(self.getGroupLiberties( state))
-            minOppLiberties = min(self.getGroupLiberties( state2))
+            minUsLiberties = min(self.getGroupLiberties(self, state))
+            minOppLiberties = min(self.getGroupLiberties(self, state2))
 
             ratio = 1 / minOppLiberties
 
@@ -79,10 +79,10 @@ class Game:
 
     def getGroupLiberties(self, state: State):
         nbLibPerGroup = []
-        for group in self.getGroups( state):
+        for group in self.getGroups(self, state):
             groupLib = set()
             for s in group:
-                groupLib.update(self.getLiberties( state, s[0] + 1, s[1] + 1))
+                groupLib.update(self.getLiberties(self, state, s[0] + 1, s[1] + 1))
             nbLibPerGroup.append(len(set(groupLib)))
         return nbLibPerGroup
 
@@ -94,22 +94,22 @@ class Game:
             for j in range (state.N):
 
                 if (j, i) not in stoneDiscovered and state.board[i][j] == state.player:
-                    newGroup = self.getGroupsAux( state, j, i, set(), {(j, i)})
+                    newGroup = self.getGroupsAux(self, state, j, i, set(), {(j, i)})
                     stoneDiscovered.update(newGroup)
                     listOfGroups.append(list(newGroup))
         return listOfGroups
 
     def getGroupsAux(self, state: State, coordX, coordY, traversed, group):
-        for n in self.findNeighbours(state, coordX + 1, coordY + 1):
-            if (n[0], n[1]) not in group and state.board[n[1]][n[0]] == state.player:
-                stone = state.board[n[1]][n[0]]
-                group.add((n[0], n[1]))
+        for n in self.findNeighbours(self, state, coordX + 1, coordY + 1):
+            if state.board[n[1]][n[0]] == state.player:
                 traversed.add((coordX, coordY))
+                if (n[0], n[1]) not in group:
+                    group.add((n[0], n[1]))
 
-        return group.union(*[self.getGroupsAux( state, n0, n1, traversed, group)
+        return group.union(*[self.getGroupsAux(self, state, n0, n1, traversed, group)
             for (n0, n1) in
             filter(lambda nbr : state.board[nbr[1]][nbr[0]] == state.player and (nbr[0], nbr[1]) not in traversed,
-                   self.findNeighbours( state, coordX + 1, coordY + 1))])
+                   self.findNeighbours(self, state, coordX + 1, coordY + 1))])
 
     def actions(self, state: State):
         state.moves = []
@@ -119,16 +119,15 @@ class Game:
                 if stone == 0:
                     state2 = deepcopy(state)
                     state2.board[i][j] = state2.player
-                    if not self.isCaptured( state2, j + 1, i + 1):
-                        state.moves.append((state.player, j + 1, i + 1))
+                    if not self.isCaptured(self, state2, j + 1, i + 1):
+                        state.moves.append((state.player, i + 1, j + 1))
         return state.moves
 
     def result(self, state: State, move_a):
-        ##Illegal moves ha
         if move_a not in state.moves:
             return state
-        state.player = self.change_Player( state.player)
-        state.board[move_a[2] - 1][move_a[1] - 1] = move_a[0]
+        state.player = self.change_Player(self, state)
+        state.board[move_a[1] - 1][move_a[2] - 1] = move_a[0]
         return state
 
     def isCaptured(self, state: State, posX, posY):
@@ -136,34 +135,34 @@ class Game:
 
         # check if neighbours are captured first and make sure that the next neighbour
         # doesn't check the "capture" of this stone
-        for n in self.findNeighbours( state, posX, posY):
+        for n in self.findNeighbours(self, state, posX, posY):
             if (state.board[posY - 1][posX - 1] != state.board[n[1]][n[0]]):
                 neighbourIsCaptured = neighbourIsCaptured or \
-                                        len(self.isCapturedAux(state, n[0] + 1, n[1] + 1, set(),
-                                                           self.getLiberties( state, n[0] + 1, n[1] + 1))) == 0
+                                        len(self.isCapturedAux(self, state, n[0] + 1, n[1] + 1, set(),
+                                                           self.getLiberties(self, state, n[0] + 1, n[1] + 1))) == 0
         # a stone is captured only if no neighbours is captured
-        return len(self.isCapturedAux( state, posX, posY, set(), self.getLiberties( state, posX, posY))) == 0 \
+        return len(self.isCapturedAux(self, state, posX, posY, set(), self.getLiberties(self, state, posX, posY))) == 0 \
                and (not neighbourIsCaptured)
 
     def isCapturedAux(self, state: State, posX, posY, traversed, liberties):
 
         stone = state.board[posY - 1][posX - 1]
-        for n in self.findNeighbours( state, posX, posY):
+        for n in self.findNeighbours(self, state, posX, posY):
             stoneNeighbour = state.board[n[1]][n[0]]
             if (n[0] + 1, n[1] + 1) not in traversed and (stoneNeighbour == stone):
-                liberties = liberties.union(self.getLiberties(state, n[0] + 1, n[1] + 1))
+                liberties = liberties.union(self.getLiberties(self, state, n[0] + 1, n[1] + 1))
                 traversed.add((posX, posY))
 
-        return liberties.union(*[self.isCapturedAux( state, n0 +1, n1 +1, traversed, liberties)
+        return liberties.union(*[self.isCapturedAux(self, state, n0 +1, n1 +1, traversed, liberties)
                 for (n0, n1) in
           filter(lambda nbr : state.board[nbr[1]][nbr[0]] == stone and (nbr[0] + 1, nbr[1] + 1) not in traversed,
-                 self.findNeighbours( state, posX, posY))])
+                 self.findNeighbours(self, state, posX, posY))])
 
     # returns list of all liberties of one stone, with position X and Y (1 to N)
     def getLiberties(self, state: State, posX, posY):
         liberties = set()
 
-        for s in self.findNeighbours( state, posX, posY):
+        for s in self.findNeighbours(self, state, posX, posY):
             stone = state.board[s[1]][s[0]]
             if stone == 0:
                 liberties.add((s[0], s[1]))
@@ -192,3 +191,20 @@ class Game:
             return [(posX - 2, state.N - 1), (posX - 1, state.N - 2), (posX, state.N - 1)]
         else:
             return [(posX - 1, posY - 2), (posX - 1, posY), (posX - 2, posY - 1), (posX, posY - 1)]
+
+game = Game
+state = game.load_board(game, "/Users/olivier/PycharmProjects/AI-MiniProjects/go.txt")
+
+
+print(game.terminal_test(game, state))
+
+game.result(game, state, (1, 2, 5))
+print(state.board)
+
+print(game.isCaptured(game, state, 5, 1))
+
+
+print(game.terminal_test(game, state))
+
+
+

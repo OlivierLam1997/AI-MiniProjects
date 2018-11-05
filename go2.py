@@ -26,7 +26,9 @@ class Game:
                 board[i][j] = int(stream[index])
                 index += 1
 
-        return Game.State(player, n, None, board)
+        state = Game.State(player, n, None, board)
+        state.moves = self.actions(state)
+        return state
 
     #
     def to_move(self, state: State):
@@ -118,7 +120,7 @@ class Game:
                     state2 = deepcopy(state)
                     state2.board[i][j] = state2.player
                     if not self.isCaptured( state2, j + 1, i + 1):
-                        state.moves.append((state.player, j + 1, i + 1))
+                        state.moves.append((state.player, i + 1, j + 1))
         return state.moves
 
     def result(self, state: State, move_a):
@@ -126,7 +128,7 @@ class Game:
         if move_a not in state.moves:
             return state
         state.player = self.change_Player( state.player)
-        state.board[move_a[2] - 1][move_a[1] - 1] = move_a[0]
+        state.board[move_a[1] - 1][move_a[2] - 1] = move_a[0]
         return state
 
     def isCaptured(self, state: State, posX, posY):
