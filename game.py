@@ -146,30 +146,27 @@ class Game:
         for n in self.findNeighbours(self, state, posX, posY):
             if (state.board[posY - 1][posX - 1] != state.board[n[1]][n[0]]):
                 neighbourIsCaptured = neighbourIsCaptured or \
-                                        self.isCapturedAux(self, state, n[0] + 1, n[1] + 1, posX, posY, [])
-
+                                        len(self.isCapturedAux(self, state, n[0] + 1, n[1] + 1, set(),
+                                                           self.getLiberties(self, state, n[0] + 1, n[1] + 1))) == 0
+        #    print(neighbourIsCaptured)
         # a stone is captured only if no neighbours is captured
-        print(neighbourIsCaptured)
-        return self.isCapturedAux(self, state, posX, posY, None, None, []) and (not neighbourIsCaptured)
+
+        return len(self.isCapturedAux(self, state, posX, posY, set(), self.getLiberties(self, state, posX, posY))) == 0 \
+               and (not neighbourIsCaptured)
 
     def isCapturedAux(self, state: State, posX, posY, traversed, liberties):
 
         stone = state.board[posY - 1][posX - 1]
         for n in self.findNeighbours(self, state, posX, posY):
             stoneNeighbour = state.board[n[1]][n[0]]
-            print(stoneNeighbour)
-            print(n)
             if (n[0] + 1, n[1] + 1) not in traversed and (stoneNeighbour == stone):
                 liberties = liberties.union(self.getLiberties(self, state, n[0] + 1, n[1] + 1))
-                traversed.append((posX, posY))
+                traversed.add((posX, posY))
 
-        print(traversed)
-        return liberties.union(*[
-            self.isCapturedAux(self, state, n0 +1, n1 +1, traversed, liberties)
+        return liberties.union(*[self.isCapturedAux(self, state, n0 +1, n1 +1, traversed, liberties)
                 for (n0, n1) in
-          filter(lambda nbr : state.board[nbr[1]][nbr[0]] == stone and (nbr[0] + 1, nbr[1] + 1) not in traversed, self.findNeighbours(self, state, posX, posY))])
-
-
+          filter(lambda nbr : state.board[nbr[1]][nbr[0]] == stone and (nbr[0] + 1, nbr[1] + 1) not in traversed,
+                 self.findNeighbours(self, state, posX, posY))])
 
     # returns list of all liberties of one stone, with position X and Y (1 to N)
     def getLiberties(self, state: State, posX, posY):
@@ -199,7 +196,7 @@ class Game:
             else:
                 return [(state.N - 1, posY - 2), (state.N - 2, posY - 1), (state.N - 1, posY)]
         elif posY == 1:
-            return [(posX - 2, 1), (posX - 1, 2), (posX, 1)]
+            return [(posX - 2, 0), (posX - 1, 0), (posX, 0)]
         elif posY == state.N:
             return [(posX - 2, state.N - 1), (posX - 1, state.N - 2), (posX, state.N - 1)]
         else:
@@ -208,21 +205,5 @@ class Game:
 
 game = Game
 state = game.load_board(game, "/Users/olivier/PycharmProjects/AI-MiniProjects/go.txt")
-print(state.N)
 
-print(state.board)
 
-neighbours = game.findNeighbours(game, state, 4, 3)
-lib = game.getLiberties(game, state, 3, 3)
-cap = game.isCapturedAux(game, state, 5, 1, [], game.getLiberties(game, state, 5, 1))
-group = game.getGroupsAux(game, state, 2, 1, None, None, [])
-
-#print()
-#print(neighbours)
-#print(lib)
-print(cap)
-
-print(len(cap) == 0)
-#print(group)
-
-print(game.getLiberties(game, state, 3, 5))
