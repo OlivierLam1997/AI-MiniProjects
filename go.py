@@ -15,7 +15,7 @@ class Game:
         stream = open(fileName, 'r').read().replace('\n', '')
         n = int(stream[0])
 
-        assert n > 3, "rang of the board sould be at least 4 to play"  # ask teacher
+        assert n >= 3, "rang of the board sould be at least 4 to play"  # ask teacher
         player = int(stream[2])
         board = [None] * n
 
@@ -43,8 +43,9 @@ class Game:
         stoneCaptured = None
         for i in range(state.N - 1):
             for j in range(state.N - 1):
-                stoneCaptured = stoneCaptured or self.isCaptured(self, state, i + 1, j + 1)
-                print(stoneCaptured)
+                if state.board[j][i] != 0:
+                    stoneCaptured = stoneCaptured or self.isCaptured(self, state, i + 1, j + 1)
+                    print(stoneCaptured)
 
         return (len(state.moves) == 0) or stoneCaptured
 
@@ -209,5 +210,4 @@ game = Game
 state = game.load_board(game, "/Users/olivier/PycharmProjects/AI-MiniProjects/go.txt")
 state.moves = game.actions(game, state)
 
-#print(game.isCaptured(game, state, 1, 2))
-print(game.isCapturedAux(game, state, 1, 2, set(), game.getLiberties(game, state, 1, 2)))
+print(game.utility(game, state, 1))
