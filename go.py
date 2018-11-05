@@ -15,7 +15,7 @@ class Game:
         stream = open(fileName, 'r').read().replace('\n', '')
         n = int(stream[0])
 
-        assert n >= 3, "rang of the board sould be at least 4 to play"  # ask teacher
+        assert n >= 3 # to be sure that the board is big enough
         player = int(stream[2])
         board = [None] * n
 
@@ -51,7 +51,7 @@ class Game:
 
     def utility(self, state: State, player):
         if self.terminal_test(self, state):
-            if self.isDraw(self, state):
+            if len(state.moves) == 0:
                 return 0
             elif state.player == player:
                 return -1
@@ -60,9 +60,6 @@ class Game:
         else:
             state2 = deepcopy(state)
             state2.player = self.to_move(self, state)
-
-            print(self.getGroupLiberties(self, state))
-            print(self.getGroupLiberties(self, state2))
 
             minUsLiberties = min(self.getGroupLiberties(self, state))
             minOppLiberties = min(self.getGroupLiberties(self, state2))
@@ -113,16 +110,6 @@ class Game:
             filter(lambda nbr : state.board[nbr[1]][nbr[0]] == state.player and (nbr[0], nbr[1]) not in traversed,
                    self.findNeighbours(self, state, coordX + 1, coordY + 1))])
 
-    def isDraw(self, state: State):
-        player2 = self.to_move(self, state)
-        state2 = deepcopy(state)
-        state2.player = player2
-
-        movesPlayer1 = self.actions(self, state)
-        movesPlayer2 = self.actions(self, state2)
-
-        return len(set().union(movesPlayer1, movesPlayer2)) == 0
-
     def actions(self, state: State):
         state.moves = []
         for i in range(state.N):
@@ -132,7 +119,7 @@ class Game:
                     state2 = deepcopy(state)
                     state2.board[i][j] = state2.player
                     if not self.isCaptured(self, state2, j + 1, i + 1):
-                        state.moves.append((state.player, i + 1, j + 1))
+                        state.moves.append((state.player, j + 1, i + 1))
         return state.moves
 
     def result(self, state: State, move_a):
@@ -207,10 +194,8 @@ class Game:
 
 
 game = Game
-state = game.load_board(game, "go.txt")
+state = game.load_board(game, "/Users/olivier/PycharmProjects/AI-MiniProjects/go.txt")
 state.moves = game.actions(game, state)
 
-print('a')
-print(game.actions(game, state))
-print('b')
+
 print(game.utility(game, state, 1))
