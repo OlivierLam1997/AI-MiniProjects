@@ -33,21 +33,23 @@ class Game:
         player = state.player
         if player == 1:
             print('Next player to move is the black')
-            return 1
+            return 2
         if player == 2:
             print('Next player to move is the white')
-            return 2
+            return 1
 
     #
     def terminal_test(self, state: State):
         stoneCaptured = None
         for i in range(state.N - 1):
             for j in range(state.N - 1):
-                stoneCaptured = stoneCaptured or self.isCaptured(state, i + 1, j + 1)
+                stoneCaptured = stoneCaptured or self.isCaptured(self, state, i + 1, j + 1)
+                print(stoneCaptured)
+
         return (len(state.moves) == 0) or stoneCaptured
 
     def utility(self, state: State, player):
-        if self.terminal_test(state):
+        if self.terminal_test(self, state):
             if self.isDraw(self, state):
                 return 0
             elif state.player == player:
@@ -55,49 +57,46 @@ class Game:
             else:
                 return 1
         else:
-            self.eval_fn(self, state, player)
+            state2 = deepcopy(state)
+            state2.player = self.to_move(self, state)
 
-    # compute all the liberties of the groups of opponent stones: list called OppLiberties
-    # compute all the liberties of our group of stones: list called UsLiberties
+            print(self.getGroupLiberties(self, state))
+            print(self.getGroupLiberties(self, state2))
 
-    def eval_fn(self, state: State, player):
-        player2 = self.to_move(state)
-        state2 = deepcopy(state)
-        state2.player = player2
+            minUsLiberties = min(self.getGroupLiberties(self, state))
+            minOppLiberties = min(self.getGroupLiberties(self, state2))
 
-        minUsLiberties = min(self.getGroupLiberties(self, state))
-        minOppLiberties = min(self.getGroupLiberties(self, state2))
+            ratio = 1 / minOppLiberties
 
-        ratio = 1 / minOppLiberties
-
-        if minUsLiberties > minOppLiberties:
-            return ratio
-        elif minUsLiberties < minOppLiberties:
-            return -ratio
-        else:
-            if state.player == player:
-                return 0.0001
+            if minUsLiberties > minOppLiberties:
+                return ratio
+            elif minUsLiberties < minOppLiberties:
+                return -ratio
             else:
-                return -0.0001
+                if state.player == player:
+                    return 0.0001
+                else:
+                    return -0.0001
 
     def getGroupLiberties(self, state: State):
         nbLibPerGroup = []
         for group in self.getGroups(self, state):
-            groupLib = []
+            groupLib = set()
             for s in group:
-                groupLib.extend(self.getLiberties(self, state, s[0] + 1, s[1] + 1))
+                groupLib.update(self.getLiberties(self, state, s[0] + 1, s[1] + 1))
             nbLibPerGroup.append(len(set(groupLib)))
         return nbLibPerGroup
 
     def getGroups(self, state: State):
-        stoneDiscovered = []
+        stoneDiscovered = set()
         listOfGroups = []
 
         for i in range(state.N):
             for j in range (state.N):
-                if (i, j) not in stoneDiscovered and state.board[j][i] == state.player:
+
+                if (j, i) not in stoneDiscovered and state.board[i][j] == state.player:
                     newGroup = self.getGroupsAux(self, state, j, i, set(), {(j, i)})
-                    stoneDiscovered.extend(list(newGroup))
+                    stoneDiscovered.update(newGroup)
                     listOfGroups.append(list(newGroup))
         return listOfGroups
 
@@ -114,14 +113,14 @@ class Game:
                    self.findNeighbours(self, state, coordX + 1, coordY + 1))])
 
     def isDraw(self, state: State):
-        player2 = self.to_move(state)
+        player2 = self.to_move(self, state)
         state2 = deepcopy(state)
         state2.player = player2
 
         movesPlayer1 = self.actions(self, state)
         movesPlayer2 = self.actions(self, state2)
 
-        return len(movesPlayer1.extend(movesPlayer2)) == 0
+        return len(set().union(movesPlayer1, movesPlayer2)) == 0
 
     def actions(self, state: State):
         state.moves = []
@@ -208,10 +207,7 @@ class Game:
 
 game = Game
 state = game.load_board(game, "/Users/olivier/PycharmProjects/AI-MiniProjects/go.txt")
+state.moves = game.actions(game, state)
 
-print(state.board)
-print(game.getGroups(game, state))
-print()
-print(game.getGroupsAux(game, state, 3, 2, set(), {(3, 2)}))
-print()
-print(state.board[2][3])
+#print(game.isCaptured(game, state, 1, 2))
+print(game.isCapturedAux(game, state, 1, 2, set(), game.getLiberties(game, state, 1, 2)))
