@@ -11,8 +11,8 @@ class Game:
             self.board = board
 
     #
-    def load_board(self, file):
-        stream = file.read().replace('\n', '')
+    def load_board(self, fileName):
+        stream = open(fileName, 'r').read().replace('\n', '')
         n = int(stream[0])
 
         assert n >= 3 # to be sure that the board is big enough
@@ -26,9 +26,7 @@ class Game:
                 board[i][j] = int(stream[index])
                 index += 1
 
-        state = Game.State(player, n, None, board)
-        state.moves = self.actions( state)
-        return state
+        return Game.State(player, n, None, board)
 
     #
     def to_move(self, state: State):
@@ -192,3 +190,14 @@ class Game:
             return [(posX - 2, state.N - 1), (posX - 1, state.N - 2), (posX, state.N - 1)]
         else:
             return [(posX - 1, posY - 2), (posX - 1, posY), (posX - 2, posY - 1), (posX, posY - 1)]
+
+
+game = Game
+state = game.load_board(game, "/Users/olivier/PycharmProjects/AI-MiniProjects/go.txt")
+
+print(state.board)
+state.moves = game.actions(game, state)
+print("a")
+print(state.moves)
+
+#print(game.utility(game, state, 1))
