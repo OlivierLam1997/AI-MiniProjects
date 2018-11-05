@@ -95,17 +95,23 @@ class Game:
 
         for i in range(state.N):
             for j in range (state.N):
-                if not (i, j) in stoneDiscovered:
-                    newGroup = self.getGroupsAux(self, state, i, j, None, None, [])
-                    stoneDiscovered.extend(newGroup)
-                    listOfGroups.append([newGroup])
+                if (i, j) not in stoneDiscovered and state.board[j][i] == state.player:
+                    newGroup = self.getGroupsAux(self, state, j, i, set(), {(j, i)})
+                    stoneDiscovered.extend(list(newGroup))
+                    listOfGroups.append(list(newGroup))
         return listOfGroups
 
-    def getGroupsAux(self, state: State, coordX, coordY, prevCoordX, prevCoordY, group):
+    def getGroupsAux(self, state: State, coordX, coordY, traversed, group):
         for n in self.findNeighbours(self, state, coordX + 1, coordY + 1):
-            if (n[0] != prevCoordX) and (n[1] != prevCoordY) and state.board[n[1]][n[0]] == state.player:
-                self.getGroupsAux(self, state, n[0], n[1], coordX, coordY, group)
-        return group.append((coordX, coordY))
+            if (n[0], n[1]) not in group and state.board[n[1]][n[0]] == state.player:
+                stone = state.board[n[1]][n[0]]
+                group.add((n[0], n[1]))
+                traversed.add((coordX, coordY))
+
+        return group.union(*[self.getGroupsAux(self, state, n0, n1, traversed, group)
+            for (n0, n1) in
+            filter(lambda nbr : state.board[nbr[1]][nbr[0]] == state.player and (nbr[0], nbr[1]) not in traversed,
+                   self.findNeighbours(self, state, coordX + 1, coordY + 1))])
 
     def isDraw(self, state: State):
         player2 = self.to_move(state)
@@ -125,8 +131,8 @@ class Game:
                 if stone == 0:
                     state2 = deepcopy(state)
                     state2.board[i][j] = state2.player
-                    if not self.isCaptured(self, state2, i + 1, j + 1):
-                        state.moves.append((state.player, i + 1, j + 1))
+                    if not self.isCaptured(self, state2, j + 1, i + 1):
+                        state.moves.append((state.player, j + 1, i + 1))
         return state.moves
 
     def result(self, state: State, move_a):
@@ -134,10 +140,9 @@ class Game:
         if move_a not in state.moves:
             return state
         state.player = self.to_move(state.player)
-        state.board[move_a[1] - 1][move_a[2] - 1] = move_a[0]
+        state.board[move_a[2] - 1][move_a[1] - 1] = move_a[0]
         return state
 
-    # Method that defines if a stone would be captured at position (posX, posY)
     def isCaptured(self, state: State, posX, posY):
         neighbourIsCaptured = None
 
@@ -148,9 +153,7 @@ class Game:
                 neighbourIsCaptured = neighbourIsCaptured or \
                                         len(self.isCapturedAux(self, state, n[0] + 1, n[1] + 1, set(),
                                                            self.getLiberties(self, state, n[0] + 1, n[1] + 1))) == 0
-        #    print(neighbourIsCaptured)
         # a stone is captured only if no neighbours is captured
-
         return len(self.isCapturedAux(self, state, posX, posY, set(), self.getLiberties(self, state, posX, posY))) == 0 \
                and (not neighbourIsCaptured)
 
@@ -196,7 +199,7 @@ class Game:
             else:
                 return [(state.N - 1, posY - 2), (state.N - 2, posY - 1), (state.N - 1, posY)]
         elif posY == 1:
-            return [(posX - 2, 0), (posX - 1, 0), (posX, 0)]
+            return [(posX - 2, 0), (posX - 1, 1), (posX, 0)]
         elif posY == state.N:
             return [(posX - 2, state.N - 1), (posX - 1, state.N - 2), (posX, state.N - 1)]
         else:
@@ -206,4 +209,9 @@ class Game:
 game = Game
 state = game.load_board(game, "/Users/olivier/PycharmProjects/AI-MiniProjects/go.txt")
 
-
+print(state.board)
+print(game.getGroups(game, state))
+print()
+print(game.getGroupsAux(game, state, 3, 2, set(), {(3, 2)}))
+print()
+print(state.board[2][3])
